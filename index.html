@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authentication</title>
+  </head>
+  <style>
+    div {
+      display: flex;
+      justify-content: center;
+      margin-top: 100px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    form input {
+      outline: none;
+      border-top: 2px solid rgb(168, 168, 168);
+      border-right: 2px solid rgb(168, 168, 168);
+      border-bottom: 2px solid rgb(47, 47, 47);
+      border-left: 2px solid rgb(47, 47, 47);
+      margin: 10px;
+      border-radius: 5px;
+      padding: 10px;
+    }
+    hr {
+      margin: 0 100px;
+      width: 1px;
+      height: 45vh;
+      border-left: 2px solid black;
+    }
+    input[type="submit"] {
+      color: green;
+      border-radius: 16px;
+      background-color: rgb(200, 205, 50);
+      border: none;
+    }
+    button {
+      color: green;
+      border-radius: 16px;
+      background-color: rgb(200, 205, 50);
+      border: none;
+    }
+  </style>
+  <body>
+    <div>
+      <form>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="username"
+        />
+        <input type="text" id="email" name="email" placeholder="email" />
+        <input
+          type="text"
+          id="password"
+          name="password"
+          placeholder="password"
+        />
+        <input type="submit" id="signUp" name="signup_submit" value="Sign up" />
+        <input type="submit" id="google" name="google" value="google" />
+      </form>
+      <hr />
+      <form>
+        <input type="text" id="lemail" name="lemail" placeholder="email" />
+        <input
+          type="text"
+          id="lpassword"
+          name="lpassword"
+          placeholder="password"
+        />
+        <input type="submit" id="logIn" name="login_submit" value="Log in" />
+        <input type="submit" id="logOut" name="logout" value="Log Out" />
+        <button id="rzp-button1">Pay</button>;
+      </form>
+    </div>
+  </body>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.2/firebase-app.js";
+    import {
+      getDatabase,
+      set,
+      ref,
+      update,
+    } from "https://www.gstatic.com/firebasejs/9.8.2/firebase-database.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      GoogleAuthProvider,
+      signInWithRedirect,
+      getRedirectResult,
+      signInWithPopup,
+    } from "https://www.gstatic.com/firebasejs/9.8.2/firebase-auth.js";
+
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNhJ66_bPsL6F-kE_EewSmjlbsBnWnAUo",
+      authDomain: "auth-3be0e.firebaseapp.com",
+      databaseURL: "https://auth-3be0e-default-rtdb.firebaseio.com",
+      projectId: "auth-3be0e",
+      storageBucket: "auth-3be0e.appspot.com",
+      messagingSenderId: "808857589284",
+      appId: "1:808857589284:web:6d85421c6d6d4b0a56eab1",
+    };
+
+    // Initialize Firebase
+    const provider = new GoogleAuthProvider();
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const auth = getAuth();
+    signUp.addEventListener("click", (e) => {
+      var email = document.getElementById("email").value;
+      var password = document.getElementById("password").value;
+      var username = document.getElementById("username").value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          set(ref(database, "users/" + user.uid), {
+            username,
+            email,
+            password,
+          });
+          alert("User Created");
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          alert(errorMessage);
+          // ..
+        });
+    });
+
+    logIn.addEventListener("click", (e) => {
+      var email = document.getElementById("lemail").value;
+      var password = document.getElementById("lpassword").value;
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Signed in
+          const dt = new Date();
+          const user = userCredential.user;
+          update(ref(database, "users/" + user.uid), {
+            last_login: dt,
+          });
+          alert("User Logged in");
+
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          alert(errorMessage);
+        });
+    });
+
+    const user = auth.currentUser;
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const uid = user.uid;
+        // ...
+      } else {
+        // User is signed out
+        // ...
+      }
+    });
+
+    logOut.addEventListener("click", (e) => {
+      signOut(auth)
+        .then(() => {
+          alert("User Logged Out");
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          alert(errorMessage);
+        });
+    });
+
+    google.addEventListener("click", (e) => {
+      // signInWithRedirect(auth, provider);
+      // getRedirectResult(auth)
+      //   .then((result) => {
+      //     // This gives you a Google Access Token. You can use it to access Google APIs.
+      //     const credential = GoogleAuthProvider.credentialFromResult(result);
+      //     const token = credential.accessToken;
+
+      //     // The signed-in user info.
+      //     const user = result.user;
+      //   })
+      //   .catch((error) => {
+      //     // Handle Errors here.
+      //     const errorCode = error.code;
+      //     const errorMessage = error.message;
+      //     // The email of the user's account used.
+      //     const email = error.customData.email;
+      //     // The AuthCredential type that was used.
+      //     const credential = GoogleAuthProvider.credentialFromError(error);
+      //     alert(errorMessage);
+      //     // ...
+      //   });
+      signInWithPopup(auth, provider)
+        .then((result) => {
+          // This gives you a Google Access Token. You can use it to access the Google API.
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          const token = credential.accessToken;
+          // The signed-in user info.
+          const user = result.user;
+          alert(user.displayname);
+          // ...
+        })
+        .catch((error) => {
+          // Handle Errors here.
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          // The email of the user's account used.
+          const email = error.customData.email;
+          // The AuthCredential type that was used.
+          const credential = GoogleAuthProvider.credentialFromError(error);
+          alert(errorMessage);
+          // ...
+        });
+    });
+    var options = {
+      key: "rzp_test_wdcEqGSuAQfEhu", // Enter the Key ID generated from the Dashboard
+      amount: "50000", // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+      currency: "INR",
+      name: "Acme Corp",
+      description: "Test Transaction",
+      image: "https://example.com/your_logo",
+      order_id: "order_JaeDaxFAQGhdiz", //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+      handler: function (response) {
+        alert(response.razorpay_payment_id);
+        alert(response.razorpay_order_id);
+        alert(response.razorpay_signature);
+      },
+      prefill: {
+        name: "Gaurav Kumar",
+        email: "gaurav.kumar@example.com",
+        contact: "9999999999",
+      },
+      notes: {
+        address: "Razorpay Corporate Office",
+      },
+      theme: {
+        color: "#3399cc",
+      },
+    };
+    var rzp1 = new Razorpay(options);
+    rzp1.on("payment.failed", function (response) {
+      alert(response.error.code);
+      alert(response.error.description);
+      alert(response.error.source);
+      alert(response.error.step);
+      alert(response.error.reason);
+      alert(response.error.metadata.order_id);
+      alert(response.error.metadata.payment_id);
+    });
+    document.getElementById("rzp-button1").onclick = function (e) {
+      rzp1.open();
+      e.preventDefault();
+    };
+  </script>
+</html>
